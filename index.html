@@ -47,9 +47,20 @@ for(let j=0;j<N;j++){const x=-total/2+j*W;beam([x,H,z],[x+W,H,z],.07,matMain);}}
 for(let j=0;j<=N;j++){const x=-total/2+j*W;for(let k=0;k<count-1;k++){const z1=-L/2+k*L/(count-1),z2=-L/2+(k+1)*L/(count-1);beam([x,H,z1],[x,H,z2],.045,matSec);}}
 for(let j=0;j<N;j++){const x=-total/2+j*W;for(let k=0;k<count-1;k++){const z1=-L/2+k*L/(count-1),z2=-L/2+(k+1)*L/(count-1);beam([x,H,z1],[x+W,H,z2],.035,matSec);}}
 for(let j=0;j<N;j++){const x=-total/2+j*W;const ridgeX=x+W/2;for(let k=0;k<count-1;k++){const z1=-L/2+k*L/(count-1),z2=-L/2+(k+1)*L/(count-1);for(let side=0;side<2;side++){const xa=side?ridgeX:x,xb=side?x+W:ridgeX;const ya=side?ridge: H,yb=side?H:ridge;beam([xa,ya,z1],[xb,yb,z1],.035,matSec);}}}
+// اتصال نمایشی ستون به فونداسیون: بیس‌پلیت و چهار انکربولت در هر ستون
+const plateMat=new THREE.MeshStandardMaterial({color:0x596a72,metalness:.75,roughness:.3});
+const boltMat=new THREE.MeshStandardMaterial({color:0xc5a45a,metalness:.8,roughness:.25});
+const pedestalMat=new THREE.MeshStandardMaterial({color:0xb9c5c0,roughness:.9});
+for(let i=0;i<count;i++){const z=-L/2+i*L/(count-1);for(let j=0;j<=N;j++){const x=-total/2+j*W;
+const pedestal=new THREE.Mesh(new THREE.BoxGeometry(.78,.32,.78),pedestalMat);pedestal.position.set(x,-.16,z);group.add(pedestal);
+const plate=new THREE.Mesh(new THREE.BoxGeometry(.58,.07,.58),plateMat);plate.position.set(x,.035,z);group.add(plate);
+for(const dx of [-.21,.21])for(const dz of [-.21,.21]){beam([x+dx,-.02,z+dz],[x+dx,.34,z+dz],.025,boltMat);const nut=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.035,6),boltMat);nut.position.set(x+dx,.34,z+dz);group.add(nut);}
+}}
+// مهاربند ضربدری نمایشی در دیوارهای طولی
+for(const x of [-total/2,total/2]){for(let k=0;k<count-1;k+=Math.max(1,Math.floor((count-1)/3))){const z1=-L/2+k*L/(count-1),z2=-L/2+Math.min(k+1,count-1)*L/(count-1);beam([x,0,z1],[x,H,z2],.045,matSec);beam([x,H,z1],[x,0,z2],.045,matSec);}}
 const box=new THREE.Box3().setFromObject(group);const size=box.getSize(new THREE.Vector3());controls.target.set(0,H/2,0);camera.position.set(total*1.5+L*.15,H+total*.9,L*1.2+total);camera.lookAt(controls.target);controls.update();
 $('area').textContent=(total*L).toLocaleString('fa-IR')+' m²';$('ridge').textContent=ridge.toFixed(2)+' m';$('frames').textContent=count.toLocaleString('fa-IR');const mainLen=count*(N*H+N*W*Math.sqrt(1+S*S)/1)+((N+1)*L);$('steel').textContent=Math.round(mainLen).toLocaleString('fa-IR')+' m';
-const rows=[['ستون‌ها',count*(N+1),'عدد','ارتفاع اسمی '+H+' متر'],['رفترهای شیب‌دار',count*N*2,'قطعه','برآورد هندسی'],['خطوط طولی جانبی و تاج',(N+1)*L,'متر','محورهای طولی'],['مساحت کف',total*L,'مترمربع','بدون کسر بازشو'],['مساحت تقریبی پوشش سقف',N*L*W*Math.sqrt(1+S*S),'مترمربع','بدون پرت و همپوشانی']];$('takeoff').innerHTML=rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('');
+const rows=[['ستون‌ها',count*(N+1),'عدد','ارتفاع اسمی '+H+' متر'],['رفترهای شیب‌دار',count*N*2,'قطعه','برآورد هندسی'],['بیس‌پلیت‌ها',count*(N+1),'عدد','ابعاد صرفاً نمایشی 580×580 میلی‌متر'],['انکربولت‌ها',count*(N+1)*4,'عدد','چهار عدد در هر پایه؛ طول نمایشی'],['مهاربندهای ضربدری',Math.ceil((count-1)/Math.max(1,Math.floor((count-1)/3)))*4,'قطعه','نمایش شماتیک در دو دیوار طولی'],['خطوط طولی جانبی و تاج',(N+1)*L,'متر','محورهای طولی'],['مساحت کف',total*L,'مترمربع','بدون کسر بازشو'],['مساحت تقریبی پوشش سقف',N*L*W*Math.sqrt(1+S*S),'مترمربع','بدون پرت و همپوشانی']];$('takeoff').innerHTML=rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('');
 }
 const ids=['span','length','height','bay','slope','spans'];ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{const e=document.getElementById(id);const out=$(id+'V');if(out)out.textContent=e.value;build()}));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const W=+$('span').value*+$('spans').value,L=+$('length').value,H=+$('height').value;if(b.dataset.view==='front')camera.position.set(0,H+W*.4,W*2.5);if(b.dataset.view==='top')camera.position.set(0,Math.max(W,L)*2,0.01);if(b.dataset.view==='iso')camera.position.set(W*1.5,H+W*.9,L*1.2+W);controls.target.set(0,H/2,0);controls.update()}));
