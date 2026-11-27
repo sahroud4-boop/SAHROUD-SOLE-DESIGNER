@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><span class="mark">S</span><div>SAHROUD <small>سوله دیزاینر | نسخه ۰٫۴٫۰</small></div></div><div class="actions"><button class="btn" id="save">ذخیره پروژه</button><button class="btn" id="export">خروجی JSON</button><button class="btn primary" id="reset">بازنشانی</button></div></header>
+<header class="top"><div class="brand"><span class="mark">S</span><div>SAHROUD <small>سوله دیزاینر | نسخه ۰٫۷٫۰</small></div></div><div class="actions"><button class="btn" id="save">ذخیره پروژه</button><button class="btn" id="export">خروجی JSON</button><button class="btn primary" id="reset">بازنشانی</button></div></header>
 <main class="layout">
 <aside class="panel"><h3>پارامترهای هندسی سوله</h3>
 <div class="field"><label>عرض دهانه <output id="spanV">20</output> متر</label><input id="span" type="range" min="10" max="40" step="1" value="20"></div>
@@ -108,15 +108,39 @@ beam([x+dx,-embed,z+dz],[x+dx,pt+.13,z+dz],Math.max(.009,ad*.42),boltMat);
 const nut=new THREE.Mesh(new THREE.CylinderGeometry(ad*.95,ad*.95,.035,6),boltMat);nut.position.set(x+dx,pt+.13,z+dz);group.add(nut);
 }
 }}
+// جزئیات نمایشی اتصال رفتر به ستون و وصله تاج؛ ابعاد صرفاً شماتیک و قابل تنظیم در نسخه‌های بعدی
+const jointPlateMat=new THREE.MeshStandardMaterial({color:0x8a9aa1,metalness:.72,roughness:.32});
+const jointBoltMat=new THREE.MeshStandardMaterial({color:0xd5b36b,metalness:.82,roughness:.25});
+const eavePlateL=.42,eavePlateH=.50,jointT=.018,apexPlateW=.48,apexPlateH=.22;
+function jointBolt(x,y,z){const bolt=new THREE.Mesh(new THREE.CylinderGeometry(.018,.018,.045,8),jointBoltMat);bolt.rotation.x=Math.PI/2;bolt.position.set(x,y,z);group.add(bolt);}
+for(let i=0;i<count;i++){
+ const z=-L/2+i*L/(count-1);
+ for(let j=0;j<N;j++){
+  const x=-total/2+j*W,rx=x+W/2;
+  for(const ex of [x,x+W]){
+   const plate=new THREE.Mesh(new THREE.BoxGeometry(eavePlateL,eavePlateH,jointT),jointPlateMat);
+   plate.position.set(ex,H+.16,z);group.add(plate);
+   for(const dx of [-.12,.12])for(const dy of [-.12,.12])jointBolt(ex+dx,H+.16+dy,z+.035);
+  }
+  for(const dz of [-.025,.025]){
+   const plate=new THREE.Mesh(new THREE.BoxGeometry(apexPlateW,apexPlateH,jointT),jointPlateMat);
+   plate.position.set(rx,ridge-.04,z+dz);group.add(plate);
+  }
+  for(const dx of [-.13,0,.13])for(const dy of [-.055,.055])jointBolt(rx+dx,ridge-.04+dy,z+.055);
+ }
+}
 // مهاربند ضربدری نمایشی در دیوارهای طولی
 for(const x of [-total/2,total/2]){for(let k=0;k<count-1;k+=Math.max(1,Math.floor((count-1)/3))){const z1=-L/2+k*L/(count-1),z2=-L/2+Math.min(k+1,count-1)*L/(count-1);beam([x,0,z1],[x,H,z2],.045,matSec);beam([x,H,z1],[x,0,z2],.045,matSec);}}
 const box=new THREE.Box3().setFromObject(group);const size=box.getSize(new THREE.Vector3());controls.target.set(0,H/2,0);camera.position.set(total*1.5+L*.15,H+total*.9,L*1.2+total);camera.lookAt(controls.target);controls.update();
 $('area').textContent=(total*L).toLocaleString('fa-IR')+' m²';$('ridge').textContent=ridge.toFixed(2)+' m';$('frames').textContent=count.toLocaleString('fa-IR');const colLen=count*(N+1)*H,rafLen=count*N*W*Math.sqrt(1+S*S),purlinLen=2*N*purlinRows*L,secLen=purlinLen;const mainLen=colLen+rafLen;$('steel').textContent=Math.round(mainLen).toLocaleString('fa-IR')+' m';
 const cm=+$('colMass').value,rm=+$('rafMass').value,sm=+$('secMass').value;
-const weighted=(cm>0?colLen*cm:0)+(rm>0?rafLen*rm:0)+(sm>0?secLen*sm:0);
+const eavePlateCount=count*N*2,apexPlateCount=count*N*2;
+const connectionPlateWeight=(eavePlateCount*eavePlateL*eavePlateH*jointT+apexPlateCount*apexPlateW*apexPlateH*jointT)*7850;
+const connectionBoltCount=eavePlateCount*4+apexPlateCount*6;
+const weighted=(cm>0?colLen*cm:0)+(rm>0?rafLen*rm:0)+(sm>0?secLen*sm:0)+connectionPlateWeight;
 const hasMass=cm>0||rm>0||sm>0;
 $('totalWeight').textContent=hasMass?Math.round(weighted).toLocaleString('fa-IR')+' kg':'— kg';
-const rows=[['ستون‌ها',count*(N+1),'عدد','ارتفاع اسمی '+H+' متر'],['طول محاسباتی ستون‌ها',colLen.toFixed(2),'متر',cm>0?'وزن واحد طول: '+cm+' kg/m':'وزن واحد طول تعریف نشده'],['طول محاسباتی رفترها',rafLen.toFixed(2),'متر',rm>0?'وزن واحد طول: '+rm+' kg/m':'وزن واحد طول تعریف نشده'],['تعداد ردیف لاپه در هر شیب',purlinRows,'ردیف','فاصله تقریبی حداکثر '+P.toFixed(2)+' متر'],['طول تقریبی لاپه‌های سقف',purlinLen.toFixed(2),'متر','دو سطح شیبدار برای هر دهانه؛ وزن واحد طول: '+(sm>0?sm+' kg/m':'تعریف نشده')],['وزن اعضای تعریف‌شده',hasMass?Math.round(weighted):'—',hasMass?'کیلوگرم':'—','فقط برای گروه‌هایی که وزن واحد طول وارد شده است'],['رفترهای شیب‌دار',count*N*2,'قطعه','برآورد هندسی'],['بیس‌پلیت‌ها',count*(N+1),'عدد',+$('plateL').value+'×'+$('plateW').value+'×'+$('plateT').value+' mm؛ مقدار ورودی کاربر'],['انکربولت‌ها',count*(N+1)*+$('anchorCount').value,'عدد',$('anchorCount').value+' عدد در هر پایه؛ قطر '+$('anchorD').value+' mm و طول مهاری ورودی '+$('anchorEmbed').value+' mm'],['مهاربندهای ضربدری',Math.ceil((count-1)/Math.max(1,Math.floor((count-1)/3)))*4,'قطعه','نمایش شماتیک در دو دیوار طولی'],['خطوط طولی جانبی و تاج',(N+1)*L,'متر','محورهای طولی'],['مساحت کف',total*L,'مترمربع','بدون کسر بازشو'],['مساحت تقریبی پوشش سقف',N*L*W*Math.sqrt(1+S*S),'مترمربع','بدون پرت و همپوشانی']];$('takeoff').innerHTML=rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('');
+const rows=[['ستون‌ها',count*(N+1),'عدد','ارتفاع اسمی '+H+' متر'],['طول محاسباتی ستون‌ها',colLen.toFixed(2),'متر',cm>0?'وزن واحد طول: '+cm+' kg/m':'وزن واحد طول تعریف نشده'],['طول محاسباتی رفترها',rafLen.toFixed(2),'متر',rm>0?'وزن واحد طول: '+rm+' kg/m':'وزن واحد طول تعریف نشده'],['تعداد ردیف لاپه در هر شیب',purlinRows,'ردیف','فاصله تقریبی حداکثر '+P.toFixed(2)+' متر'],['طول تقریبی لاپه‌های سقف',purlinLen.toFixed(2),'متر','دو سطح شیبدار برای هر دهانه؛ وزن واحد طول: '+(sm>0?sm+' kg/m':'تعریف نشده')],['وزن اعضای تعریف‌شده',hasMass?Math.round(weighted):'—',hasMass?'کیلوگرم':'—','فقط برای گروه‌هایی که وزن واحد طول وارد شده است'],['رفترهای شیب‌دار',count*N*2,'قطعه','برآورد هندسی'],['ورق اتصال پای رفتر به ستون',eavePlateCount,'عدد',eavePlateL+'×'+eavePlateH+'×'+(jointT*1000)+' mm؛ هندسه شماتیک'],['ورق وصله تاج',apexPlateCount,'عدد',apexPlateW+'×'+apexPlateH+'×'+(jointT*1000)+' mm؛ هندسه شماتیک'],['پیچ‌های نمایشی اتصالات قاب',connectionBoltCount,'عدد','تعداد اولیه برای متره مفهومی؛ قطر و آرایش نهایی نیازمند طراحی اتصال'],['وزن تقریبی ورق‌های اتصال قاب',connectionPlateWeight.toFixed(1),'کیلوگرم','با چگالی ۷۸۵۰ kg/m³؛ بدون پرت و جوش'],['بیس‌پلیت‌ها',count*(N+1),'عدد',+$('plateL').value+'×'+$('plateW').value+'×'+$('plateT').value+' mm؛ مقدار ورودی کاربر'],['انکربولت‌ها',count*(N+1)*+$('anchorCount').value,'عدد',$('anchorCount').value+' عدد در هر پایه؛ قطر '+$('anchorD').value+' mm و طول مهاری ورودی '+$('anchorEmbed').value+' mm'],['مهاربندهای ضربدری',Math.ceil((count-1)/Math.max(1,Math.floor((count-1)/3)))*4,'قطعه','نمایش شماتیک در دو دیوار طولی'],['خطوط طولی جانبی و تاج',(N+1)*L,'متر','محورهای طولی'],['مساحت کف',total*L,'مترمربع','بدون کسر بازشو'],['مساحت تقریبی پوشش سقف',N*L*W*Math.sqrt(1+S*S),'مترمربع','بدون پرت و همپوشانی']];$('takeoff').innerHTML=rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('');
 }
 function calcI(){
 const h=+$('secH').value,b=+$('secB').value,tw=+$('secTw').value,tf=+$('secTf').value;
@@ -157,7 +181,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',(
 function data(){return {...Object.fromEntries([...ids,...connectionIds,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].map(id=>[id,$(id).value])),profileSpecs}}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
 $('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1,purlinSpacing:1.5,plateL:580,plateW:580,plateT:25,anchorCount:4,anchorD:24,anchorEmbed:600,colMass:'',rafMass:'',secMass:'',secH:400,secB:200,secTw:8,secTf:12,profileTarget:'col'}).forEach(([k,v])=>$(k).value=v);Object.keys(profileSpecs).forEach(k=>profileSpecs[k]=null);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});calcI();renderProfileSummary();build()};
-$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.4.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.7.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
 const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,...connectionIds,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});if(d.profileSpecs)Object.assign(profileSpecs,d.profileSpecs)}catch{}}
 loadProfileTarget();
 function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();build();function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
