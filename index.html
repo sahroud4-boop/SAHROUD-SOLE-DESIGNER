@@ -236,7 +236,7 @@ const key=$('profileTarget').value,p=profileSpecs[key];
 const fallback={h:400,b:200,tw:8,tf:12};
 const v=p||fallback;
 $('secH').value=v.h;$('secB').value=v.b;$('secTw').value=v.tw;$('secTf').value=v.tf;
-calcI();renderProfileSummary();
+calcI();renderProfileSummary();if(typeof refreshAll==='function')refreshAll();
 }
 function renderProfileSummary(){
 const labels={col:'ستون',raf:'رفتر',sec:'عضو فرعی'};
@@ -257,7 +257,7 @@ let refreshQueued=false;
 function refreshAll(){if(refreshQueued)return;refreshQueued=true;requestAnimationFrame(()=>{refreshQueued=false;build();renderLoads();runFrameAnalysis();});}
 function syncParam(id,value){const e=$(id),n=document.querySelector('[data-for="'+id+'"]'),out=$(id+'V');if(!e)return;const v=Number(value);if(!Number.isFinite(v))return;const min=Number(e.min),max=Number(e.max),clamped=Math.min(max,Math.max(min,v));e.value=String(clamped);if(n)n.value=String(clamped);if(out)out.textContent=String(clamped);}
 ids.forEach(id=>{const e=$(id);e.addEventListener('input',()=>{const n=document.querySelector('[data-for="'+id+'"]');if(n)n.value=e.value;const out=$(id+'V');if(out)out.textContent=e.value;refreshAll();});e.addEventListener('change',refreshAll);});
-document.querySelectorAll('.param-number').forEach(n=>{const id=n.dataset.for;n.addEventListener('input',()=>{if(n.value===''||!Number.isFinite(Number(n.value)))return;syncParam(id,n.value);refreshAll();});n.addEventListener('change',()=>{syncParam(id,n.value);refreshAll();});});
+document.querySelectorAll('.param-number').forEach(n=>{const id=n.dataset.for;n.addEventListener('input',()=>{if(n.value===''||!Number.isFinite(Number(n.value)))return;const e=$(id),v=Number(n.value);if(v<Number(e.min)||v>Number(e.max))return;e.value=n.value;const out=$(id+'V');if(out)out.textContent=n.value;refreshAll();});n.addEventListener('change',()=>{syncParam(id,n.value);refreshAll();});});
 [...connectionIds,...massIds].forEach(id=>$(id).addEventListener('input',refreshAll));
 loadIds.forEach(id=>$(id).addEventListener('input',refreshAll));
 
@@ -266,10 +266,10 @@ function renderLoads(){const L=+$('length').value,W=+$('span').value*+$('spans')
 function renderCombinations(v,area,H,spacing){const D=v.deadLoad*area,L=v.liveLoad*area,S=v.snowLoad*area,W=v.windPressure*H*spacing,U=v.windSuction*area;const rows=[['۱٫۴D',1.4*D,0,0],['۱٫۲D + ۱٫۶L + ۰٫۵S',1.2*D+1.6*L+.5*S,0,0],['۱٫۲D + ۱٫۰S + ۰٫۵L',1.2*D+S+.5*L,0,0],['۰٫۹D ± ۱٫۰W',.9*D,W,0],['۰٫۹D همراه با مکش ۱٫۰W',.9*D,0,U]];const n=x=>x.toLocaleString('fa-IR',{maximumFractionDigits:2})+' kN';$('comboRows').innerHTML=rows.map(r=>'<tr><td>'+r[0]+'</td><td>'+n(r[1])+'</td><td>'+n(r[2])+'</td><td>'+n(r[3])+'</td></tr>').join('')}
 function data(){return {...Object.fromEntries([...ids,...connectionIds,...loadIds,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].map(id=>[id,$(id).value])),profileSpecs}}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
-$('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1,purlinSpacing:1.5,plateL:580,plateW:580,plateT:25,anchorCount:4,anchorD:24,anchorEmbed:600,deadLoad:.25,liveLoad:.75,snowLoad:.75,windPressure:.8,windSuction:.8,colMass:'',rafMass:'',secMass:'',secH:400,secB:200,secTw:8,secTf:12,profileTarget:'col'}).forEach(([k,v])=>$(k).value=v);Object.keys(profileSpecs).forEach(k=>profileSpecs[k]=null);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});calcI();renderProfileSummary();build()};
+$('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1,purlinSpacing:1.5,plateL:580,plateW:580,plateT:25,anchorCount:4,anchorD:24,anchorEmbed:600,deadLoad:.25,liveLoad:.75,snowLoad:.75,windPressure:.8,windSuction:.8,colMass:'',rafMass:'',secMass:'',secH:400,secB:200,secTw:8,secTf:12,profileTarget:'col'}).forEach(([k,v])=>$(k).value=v);Object.keys(profileSpecs).forEach(k=>profileSpecs[k]=null);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value;const n=document.querySelector('[data-for="'+id+'"]');if(n)n.value=document.getElementById(id).value});calcI();renderProfileSummary();build()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'1.3.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
 const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,...connectionIds,...loadIds,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});if(d.profileSpecs)Object.assign(profileSpecs,d.profileSpecs)}catch{}}
-loadProfileTarget();renderLoads();
+document.querySelectorAll('.param-number').forEach(n=>{n.value=$(n.dataset.for).value;});loadProfileTarget();renderLoads();
 
 // --- Linear elastic 2D frame solver (preliminary equivalent portal frame) ---
 function solveLinearSystem(A,b){const n=b.length,M=A.map((r,i)=>r.slice().concat([b[i]]));for(let k=0;k<n;k++){let p=k;for(let i=k+1;i<n;i++)if(Math.abs(M[i][k])>Math.abs(M[p][k]))p=i;if(Math.abs(M[p][k])<1e-10)throw new Error('ماتریس سختی تکین است؛ قیود یا مشخصات مقطع را بررسی کنید.');[M[k],M[p]]=[M[p],M[k]];const q=M[k][k];for(let j=k;j<=n;j++)M[k][j]/=q;for(let i=0;i<n;i++)if(i!==k){const z=M[i][k];for(let j=k;j<=n;j++)M[i][j]-=z*M[k][j];}}return M.map(r=>r[n]);}
