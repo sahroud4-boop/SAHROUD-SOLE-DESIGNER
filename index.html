@@ -104,5 +104,6 @@ $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringif
 $('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1}).forEach(([k,v])=>$(k).value=v);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});build()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.1.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
 calcI();const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]})}catch{}}
+calcI();
 function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();build();function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
 </script></body></html>
