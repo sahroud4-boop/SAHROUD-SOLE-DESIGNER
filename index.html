@@ -32,7 +32,9 @@
 <div style="background:#f4faf7;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:2">
 <div>مساحت: <b id="secArea">—</b> mm²</div><div>وزن نظری: <b id="secKg">—</b> kg/m</div><div>Ix: <b id="secIx">—</b> mm⁴</div><div>Iy: <b id="secIy">—</b> mm⁴</div>
 </div>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><button class="btn" id="applyCol">اعمال وزن به ستون</button><button class="btn" id="applyRaf">اعمال وزن به رفتر</button><button class="btn" id="applySec">اعمال وزن به فرعی</button></div>
+<div class="field"><label>عضو هدف برای ثبت مقطع</label><select id="profileTarget" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px"><option value="col">ستون</option><option value="raf">رفتر</option><option value="sec">عضو فرعی</option></select></div>
+<button class="btn primary" id="applyProfile" style="width:100%">ثبت مقطع برای عضو انتخاب‌شده</button>
+<div class="hint" id="profileSummary" style="margin-top:8px">هنوز مقطعی برای این عضو ثبت نشده است.</div>
 <p class="hint">فرض محاسبه چگالی فولاد ۷۸۵۰ kg/m³ است. خواص محاسباتی مقطع I ایده‌آل و بدون شعاع گوشه، جوش، خوردگی یا تلرانس است؛ برای طراحی نهایی باید با مشخصات سازنده و ضوابط مربوط تطبیق داده شود.</p>
 <p class="hint">با تغییر پارامترها، مدل سه‌بعدی و مقادیر هندسی به‌روزرسانی می‌شوند. واحد تمام ابعاد متر است.</p>
 <div class="notice">این نسخه، نمونه اولیه مدل‌سازی و متره هندسی است؛ نتایج آن تحلیل یا طراحی سازه‌ای قابل اجرا محسوب نمی‌شود.</div>
@@ -93,17 +95,36 @@ const kg=A*.00785;
 $('secArea').textContent=A.toFixed(1);$('secKg').textContent=kg.toFixed(2);$('secIx').textContent=Ix.toExponential(3);$('secIy').textContent=Iy.toExponential(3);
 return {h,b,tw,tf,A,Ix,Iy,kg};
 }
-['secH','secB','secTw','secTf'].forEach(id=>$(id).addEventListener('input',calcI));
-$('applyCol').onclick=()=>{const s=calcI();if(s){$('colMass').value=s.kg.toFixed(2);build()}};
-$('applyRaf').onclick=()=>{const s=calcI();if(s){$('rafMass').value=s.kg.toFixed(2);build()}};
-$('applySec').onclick=()=>{const s=calcI();if(s){$('secMass').value=s.kg.toFixed(2);build()}};
+const profileSpecs={col:null,raf:null,sec:null};
+const profileFields=['secH','secB','secTw','secTf'];
+function loadProfileTarget(){
+const key=$('profileTarget').value,p=profileSpecs[key];
+const fallback={h:400,b:200,tw:8,tf:12};
+const v=p||fallback;
+$('secH').value=v.h;$('secB').value=v.b;$('secTw').value=v.tw;$('secTf').value=v.tf;
+calcI();renderProfileSummary();
+}
+function renderProfileSummary(){
+const labels={col:'ستون',raf:'رفتر',sec:'عضو فرعی'};
+$('profileSummary').innerHTML=Object.entries(profileSpecs).map(([k,p])=>p?labels[k]+': I('+p.h+'×'+p.b+'×'+p.tw+'×'+p.tf+')، وزن '+p.kg.toFixed(2)+' kg/m':'').filter(Boolean).join('<br>')||'هنوز مقطعی برای اعضا ثبت نشده است.';
+}
+profileFields.forEach(id=>$(id).addEventListener('input',calcI));
+$('profileTarget').addEventListener('change',loadProfileTarget);
+$('applyProfile').onclick=()=>{
+const s=calcI();if(!s)return;
+const key=$('profileTarget').value;
+profileSpecs[key]=s;
+const massInput={col:'colMass',raf:'rafMass',sec:'secMass'}[key];
+$(massInput).value=s.kg.toFixed(2);
+renderProfileSummary();build();
+};
 const ids=['span','length','height','bay','slope','spans'];['colMass','rafMass','secMass'].forEach(id=>$(id).addEventListener('input',build));ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{const e=document.getElementById(id);const out=$(id+'V');if(out)out.textContent=e.value;build()}));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const W=+$('span').value*+$('spans').value,L=+$('length').value,H=+$('height').value;if(b.dataset.view==='front')camera.position.set(0,H+W*.4,W*2.5);if(b.dataset.view==='top')camera.position.set(0,Math.max(W,L)*2,0.01);if(b.dataset.view==='iso')camera.position.set(W*1.5,H+W*.9,L*1.2+W);controls.target.set(0,H/2,0);controls.update()}));
-function data(){return Object.fromEntries([...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf'].map(id=>[id,$(id).value]))}
+function data(){return {...Object.fromEntries([...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].map(id=>[id,$(id).value])),profileSpecs}}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
-$('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1}).forEach(([k,v])=>$(k).value=v);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});build()};
+$('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1,colMass:'',rafMass:'',secMass:'',secH:400,secB:200,secTw:8,secTf:12,profileTarget:'col'}).forEach(([k,v])=>$(k).value=v);Object.keys(profileSpecs).forEach(k=>profileSpecs[k]=null);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});calcI();renderProfileSummary();build()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.1.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
-calcI();const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]})}catch{}}
-calcI();
+const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});if(d.profileSpecs)Object.assign(profileSpecs,d.profileSpecs)}catch{}}
+loadProfileTarget();
 function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();build();function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
 </script></body></html>
