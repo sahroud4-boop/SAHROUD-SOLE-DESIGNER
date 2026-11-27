@@ -189,21 +189,27 @@ function renderDrawings(){
 function downloadBlob(name,content,type){
  const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);
 }
-function dxfLine(x1,y1,x2,y2,layer='GEOMETRY'){return '0\\nLINE\\n8\\n'+layer+'\\n10\\n'+x1+'\\n20\\n'+y1+'\\n30\\n0\\n11\\n'+x2+'\\n21\\n'+y2+'\\n31\\n0\\n';}
+function dxfLine(x1,y1,x2,y2,layer='GEOMETRY'){
+ const nl=String.fromCharCode(10);
+ return [['0','LINE'],['8',layer],['10',x1],['20',y1],['30',0],['11',x2],['21',y2],['31',0]].flat().join(nl)+nl;
+}
 function makeDXF(){
  const W=+$('span').value,N=+$('spans').value,L=+$('length').value,H=+$('height').value,B=+$('bay').value,S=+$('slope').value/100,total=W*N,ridge=H+W/2*S,frameCount=Math.ceil(L/B)+1,actual=L/(frameCount-1),e=[];
  const X=x=>Math.round(x*1000),Y=y=>Math.round(y*1000),Z=z=>Math.round(z*1000);
  const add=(a,b,c,d,layer)=>e.push(dxfLine(X(a),Y(b),X(c),Y(d),layer));
  for(let j=0;j<=N;j++){const x=-total/2+j*W;add(x,0,x,H,'COLUMNS');if(j<N){add(x,H,x+W/2,ridge,'RAFTERS');add(x+W/2,ridge,x+W,H,'RAFTERS');}}
- for(let j=0;j<=N;j++){const x=-total/2+j*W;for(let k=0;k<frameCount;k++){const z=-L/2+k*actual; e.push('0\\nPOINT\\n8\\nGRID\\n10\\n'+X(x)+'\\n20\\n'+Y(0)+'\\n30\\n'+Z(z)+'\\n');}}
+ for(let j=0;j<=N;j++){const x=-total/2+j*W;for(let k=0;k<frameCount;k++){const z=-L/2+k*actual;const nl=String.fromCharCode(10);e.push(['0','POINT','8','GRID','10',X(x),'20',Y(0),'30',Z(z)].join(nl)+nl);}}
  for(let j=0;j<=N;j++){const x=-total/2+j*W;add(x,-.3,x,H+.4,'DIMENSION');}
- for(let j=0;j<=N;j++){const x=-total/2+j*W;add(x,0,x,L,'PLAN_AXES');}
- for(let k=0;k<frameCount;k++){const z=-L/2+k*actual;add(-total/2,z,total/2,z,'PLAN_AXES');}
- return '0\\nSECTION\\n2\\nHEADER\\n9\\n$INSUNITS\\n70\\n4\\n0\\nENDSEC\\n0\\nSECTION\\n2\\nENTITIES\\n'+e.join('')+'0\\nENDSEC\\n0\\nEOF\\n';
+ const planOffset=-H-5;
+ for(let j=0;j<=N;j++){const x=-total/2+j*W;add(x,planOffset,x,planOffset+L,'PLAN_AXES');}
+ for(let k=0;k<frameCount;k++){const z=-L/2+k*actual;add(-total/2,planOffset+z+L/2,total/2,planOffset+z+L/2,'PLAN_AXES');}
+ const nl=String.fromCharCode(10);
+ const header=['0','SECTION','2','HEADER','9','$INSUNITS','70','4','0','ENDSEC','0','SECTION','2','ENTITIES'].join(nl)+nl;
+ return header+e.join('')+['0','ENDSEC','0','EOF',''].join(nl);
 }
 function exportTakeoffCSV(){
  const rows=[['شرح','مقدار','واحد','توضیحات'],...Array.from($('takeoff').rows).map(r=>Array.from(r.cells).map(c=>c.textContent))];
- const csv='\\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\\r\\n');
+ const csv=String.fromCharCode(65279)+rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join(String.fromCharCode(13,10));
  downloadBlob('SAHROUD-takeoff-v0.8.csv',csv,'text/csv;charset=utf-8');
 }
 $('dxfExport').onclick=()=>downloadBlob('SAHROUD-layout-v0.8.dxf',makeDXF(),'application/dxf');
