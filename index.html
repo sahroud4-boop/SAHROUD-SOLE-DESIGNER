@@ -23,7 +23,17 @@
 <div class="field"><label>وزن واحد طول ستون <span>kg/m</span></label><input id="colMass" type="number" min="0" step=".1" placeholder="مثلاً 25" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
 <div class="field"><label>وزن واحد طول رفتر <span>kg/m</span></label><input id="rafMass" type="number" min="0" step=".1" placeholder="مثلاً 30" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
 <div class="field"><label>وزن واحد طول اعضای فرعی <span>kg/m</span></label><input id="secMass" type="number" min="0" step=".1" placeholder="مثلاً 8" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
-<p class="hint">مقادیر را از جدول مقاطع یا مشخصات واقعی پروفیل انتخابی وارد کنید. این فیلدها فعلاً ورودی دستی هستند و به معنی وجود کتابخانه استاندارد مقاطع نیستند.</p>
+<p class="hint">مقادیر را از جدول مقاطع یا مشخصات واقعی پروفیل انتخابی وارد کنید. این فیلدها فعلاً ورودی دستی هستند و به معنی وجود کتابخانه استاندارد مقاطع نیستند.</p><p class="hint">برای محاسبه وزن و خواص هندسی یک مقطع I جوش‌شده، ابعاد واقعی را وارد کنید. گوشه‌ها و جوش‌ها در این محاسبه ساده لحاظ نشده‌اند.</p>
+<h3 style="margin-top:20px">محاسبه‌گر مقطع I مستطیلی</h3>
+<div class="field"><label>ارتفاع کل مقطع h <span>میلی‌متر</span></label><input id="secH" type="number" min="1" value="400" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
+<div class="field"><label>عرض بال b <span>میلی‌متر</span></label><input id="secB" type="number" min="1" value="200" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
+<div class="field"><label>ضخامت جان tw <span>میلی‌متر</span></label><input id="secTw" type="number" min="1" value="8" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
+<div class="field"><label>ضخامت بال tf <span>میلی‌متر</span></label><input id="secTf" type="number" min="1" value="12" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px"></div>
+<div style="background:#f4faf7;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:12px;line-height:2">
+<div>مساحت: <b id="secArea">—</b> mm²</div><div>وزن نظری: <b id="secKg">—</b> kg/m</div><div>Ix: <b id="secIx">—</b> mm⁴</div><div>Iy: <b id="secIy">—</b> mm⁴</div>
+</div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px"><button class="btn" id="applyCol">اعمال وزن به ستون</button><button class="btn" id="applyRaf">اعمال وزن به رفتر</button><button class="btn" id="applySec">اعمال وزن به فرعی</button></div>
+<p class="hint">فرض محاسبه چگالی فولاد ۷۸۵۰ kg/m³ است. خواص محاسباتی مقطع I ایده‌آل و بدون شعاع گوشه، جوش، خوردگی یا تلرانس است؛ برای طراحی نهایی باید با مشخصات سازنده و ضوابط مربوط تطبیق داده شود.</p>
 <p class="hint">با تغییر پارامترها، مدل سه‌بعدی و مقادیر هندسی به‌روزرسانی می‌شوند. واحد تمام ابعاد متر است.</p>
 <div class="notice">این نسخه، نمونه اولیه مدل‌سازی و متره هندسی است؛ نتایج آن تحلیل یا طراحی سازه‌ای قابل اجرا محسوب نمی‌شود.</div>
 </aside>
@@ -72,12 +82,27 @@ const hasMass=cm>0||rm>0||sm>0;
 $('totalWeight').textContent=hasMass?Math.round(weighted).toLocaleString('fa-IR')+' kg':'— kg';
 const rows=[['ستون‌ها',count*(N+1),'عدد','ارتفاع اسمی '+H+' متر'],['طول محاسباتی ستون‌ها',colLen.toFixed(2),'متر',cm>0?'وزن واحد طول: '+cm+' kg/m':'وزن واحد طول تعریف نشده'],['طول محاسباتی رفترها',rafLen.toFixed(2),'متر',rm>0?'وزن واحد طول: '+rm+' kg/m':'وزن واحد طول تعریف نشده'],['طول تقریبی اعضای فرعی',secLen.toFixed(2),'متر',sm>0?'وزن واحد طول: '+sm+' kg/m':'وزن واحد طول تعریف نشده'],['وزن اعضای تعریف‌شده',hasMass?Math.round(weighted):'—',hasMass?'کیلوگرم':'—','فقط برای گروه‌هایی که وزن واحد طول وارد شده است'],['رفترهای شیب‌دار',count*N*2,'قطعه','برآورد هندسی'],['بیس‌پلیت‌ها',count*(N+1),'عدد','ابعاد صرفاً نمایشی 580×580 میلی‌متر'],['انکربولت‌ها',count*(N+1)*4,'عدد','چهار عدد در هر پایه؛ طول نمایشی'],['مهاربندهای ضربدری',Math.ceil((count-1)/Math.max(1,Math.floor((count-1)/3)))*4,'قطعه','نمایش شماتیک در دو دیوار طولی'],['خطوط طولی جانبی و تاج',(N+1)*L,'متر','محورهای طولی'],['مساحت کف',total*L,'مترمربع','بدون کسر بازشو'],['مساحت تقریبی پوشش سقف',N*L*W*Math.sqrt(1+S*S),'مترمربع','بدون پرت و همپوشانی']];$('takeoff').innerHTML=rows.map(r=>'<tr>'+r.map(v=>'<td>'+v+'</td>').join('')+'</tr>').join('');
 }
+function calcI(){
+const h=+$('secH').value,b=+$('secB').value,tw=+$('secTw').value,tf=+$('secTf').value;
+const valid=[h,b,tw,tf].every(v=>Number.isFinite(v)&&v>0)&&2*tf<h&&tw<b;
+if(!valid){['secArea','secKg','secIx','secIy'].forEach(id=>$(id).textContent='ابعاد نامعتبر');return null}
+const hw=h-2*tf,A=2*b*tf+hw*tw;
+const Ix=2*((b*Math.pow(tf,3)/12)+(b*tf*Math.pow((h-tf)/2,2)))+tw*Math.pow(hw,3)/12;
+const Iy=2*(tf*Math.pow(b,3)/12)+hw*Math.pow(tw,3)/12;
+const kg=A*.00785;
+$('secArea').textContent=A.toFixed(1);$('secKg').textContent=kg.toFixed(2);$('secIx').textContent=Ix.toExponential(3);$('secIy').textContent=Iy.toExponential(3);
+return {h,b,tw,tf,A,Ix,Iy,kg};
+}
+['secH','secB','secTw','secTf'].forEach(id=>$(id).addEventListener('input',calcI));
+$('applyCol').onclick=()=>{const s=calcI();if(s){$('colMass').value=s.kg.toFixed(2);build()}};
+$('applyRaf').onclick=()=>{const s=calcI();if(s){$('rafMass').value=s.kg.toFixed(2);build()}};
+$('applySec').onclick=()=>{const s=calcI();if(s){$('secMass').value=s.kg.toFixed(2);build()}};
 const ids=['span','length','height','bay','slope','spans'];['colMass','rafMass','secMass'].forEach(id=>$(id).addEventListener('input',build));ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{const e=document.getElementById(id);const out=$(id+'V');if(out)out.textContent=e.value;build()}));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const W=+$('span').value*+$('spans').value,L=+$('length').value,H=+$('height').value;if(b.dataset.view==='front')camera.position.set(0,H+W*.4,W*2.5);if(b.dataset.view==='top')camera.position.set(0,Math.max(W,L)*2,0.01);if(b.dataset.view==='iso')camera.position.set(W*1.5,H+W*.9,L*1.2+W);controls.target.set(0,H/2,0);controls.update()}));
-function data(){return Object.fromEntries([...ids,'colMass','rafMass','secMass'].map(id=>[id,$(id).value]))}
+function data(){return Object.fromEntries([...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf'].map(id=>[id,$(id).value]))}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
 $('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1}).forEach(([k,v])=>$(k).value=v);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});build()};
 $('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.1.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
-const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]})}catch{}}
+calcI();const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]})}catch{}}
 function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();build();function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
 </script></body></html>
