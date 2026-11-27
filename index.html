@@ -137,7 +137,7 @@ const massInput={col:'colMass',raf:'rafMass',sec:'secMass'}[key];
 $(massInput).value=s.kg.toFixed(2);
 renderProfileSummary();build();
 };
-const ids=['span','length','height','bay','slope','spans'];['colMass','rafMass','secMass'].forEach(id=>$(id).addEventListener('input',build));ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{const e=document.getElementById(id);const out=$(id+'V');if(out)out.textContent=e.value;build()}));
+const ids=['span','length','height','bay','slope','spans','purlinSpacing'];['colMass','rafMass','secMass'].forEach(id=>$(id).addEventListener('input',build));ids.forEach(id=>document.getElementById(id).addEventListener('input',()=>{const e=document.getElementById(id);const out=$(id+'V');if(out)out.textContent=e.value;build()}));
 document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>{const W=+$('span').value*+$('spans').value,L=+$('length').value,H=+$('height').value;if(b.dataset.view==='front')camera.position.set(0,H+W*.4,W*2.5);if(b.dataset.view==='top')camera.position.set(0,Math.max(W,L)*2,0.01);if(b.dataset.view==='iso')camera.position.set(W*1.5,H+W*.9,L*1.2+W);controls.target.set(0,H/2,0);controls.update()}));
 function data(){return {...Object.fromEntries([...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].map(id=>[id,$(id).value])),profileSpecs}}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
