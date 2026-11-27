@@ -289,8 +289,8 @@ function runFrameAnalysis(){
  for(let i=0;i<6;i++)for(let j=0;j<6;j++)K[dofs[i]][dofs[j]]+=kg[i][j];
  }
  const q=caseName==='gravity'?(loads.deadLoad+loads.liveLoad+loads.snowLoad)*spacing:caseName==='wind'?loads.deadLoad*spacing:Math.max(0,.9*loads.deadLoad-loads.windSuction)*spacing;
- const roof=members.filter(m=>m.type.includes('رفتر'));for(const m of roof){const tributary=q*m.len/2;F[m.a*3+1]-=tributary;F[m.b*3+1]-=tributary;}
- if(caseName==='wind'){const lateral=loads.windPressure*H*spacing/2;F[n1*3]+=lateral;F[n3*3]+=lateral;}
+ const roof=members.filter(m=>m.type.includes('رفتر'));for(const m of roof){const tributary=q*m.len*500;F[m.a*3+1]-=tributary;F[m.b*3+1]-=tributary;}
+ if(caseName==='wind'){const lateral=loads.windPressure*H*spacing*500;F[n1*3]+=lateral;F[n3*3]+=lateral;}
  const fixed=new Set([0,1,2,n4*3,n4*3+1,n4*3+2]),free=Array.from({length:nd},(_,i)=>i).filter(i=>!fixed.has(i)),Kr=free.map(i=>free.map(j=>K[i][j])),Fr=free.map(i=>F[i]),sol=solveLinearSystem(Kr,Fr),D=Array(nd).fill(0);free.forEach((d,i)=>D[d]=sol[i]);
  const R=K.map((row,i)=>row.reduce((sum,v,j)=>sum+v*D[j],0)-F[i]);
  let maxDisp=0;for(let i=0;i<nodes.length;i++)maxDisp=Math.max(maxDisp,Math.hypot(D[i*3],D[i*3+1]));
