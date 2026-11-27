@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<header class="top"><div class="brand"><span class="mark">S</span><div>SAHROUD <small>سوله دیزاینر | نسخه ۰٫۱٫۰</small></div></div><div class="actions"><button class="btn" id="save">ذخیره پروژه</button><button class="btn" id="export">خروجی JSON</button><button class="btn primary" id="reset">بازنشانی</button></div></header>
+<header class="top"><div class="brand"><span class="mark">S</span><div>SAHROUD <small>سوله دیزاینر | نسخه ۰٫۲٫۰</small></div></div><div class="actions"><button class="btn" id="save">ذخیره پروژه</button><button class="btn" id="export">خروجی JSON</button><button class="btn primary" id="reset">بازنشانی</button></div></header>
 <main class="layout">
 <aside class="panel"><h3>پارامترهای هندسی سوله</h3>
 <div class="field"><label>عرض دهانه <output id="spanV">20</output> متر</label><input id="span" type="range" min="10" max="40" step="1" value="20"></div>
@@ -123,7 +123,7 @@ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',(
 function data(){return {...Object.fromEntries([...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].map(id=>[id,$(id).value])),profileSpecs}}
 $('save').onclick=()=>{localStorage.setItem('sahroud_shed_project',JSON.stringify(data()));alert('پارامترهای پروژه در همین مرورگر ذخیره شد.')};
 $('reset').onclick=()=>{Object.entries({span:20,length:40,height:6,bay:5,slope:15,spans:1,colMass:'',rafMass:'',secMass:'',secH:400,secB:200,secTw:8,secTf:12,profileTarget:'col'}).forEach(([k,v])=>$(k).value=v);Object.keys(profileSpecs).forEach(k=>profileSpecs[k]=null);ids.forEach(id=>{const o=document.getElementById(id+'V');if(o)o.textContent=document.getElementById(id).value});calcI();renderProfileSummary();build()};
-$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.1.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
+$('export').onclick=()=>{const blob=new Blob([JSON.stringify({app:'SAHROUD Sole Designer',version:'0.2.0',parameters:data()},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sahroud-shed-project.json';a.click();URL.revokeObjectURL(a.href)};
 const saved=localStorage.getItem('sahroud_shed_project');if(saved){try{const d=JSON.parse(saved);[...ids,'colMass','rafMass','secMass','secH','secB','secTw','secTf','profileTarget'].forEach(id=>{if(d[id]!==undefined)document.getElementById(id).value=d[id]});if(d.profileSpecs)Object.assign(profileSpecs,d.profileSpecs)}catch{}}
 loadProfileTarget();
 function resize(){const w=host.clientWidth,h=host.clientHeight;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h)}window.addEventListener('resize',resize);resize();build();function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}animate();
